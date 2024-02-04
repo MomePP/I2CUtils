@@ -4,62 +4,69 @@
 
 #include <Wire.h>
 
+#ifndef __I2C_REGISTER_HPP__
+#define __I2C_REGISTER_HPP__
 
-#ifndef __I2C_DEVICE_HPP__
-#define __I2C_DEVICE_HPP__
-
-class I2CDevice{
+class I2CDevice
+{
 public:
-
-    I2CDevice(uint8_t addr) : _i2c_address(addr){};
+    I2CDevice(uint8_t addr)
+        : _i2c_address(addr){};
 
 protected:
-
     const uint8_t _i2c_address;
 
     /*
-    Write raw bits into specified registers
-    */
-    void write_register(uint8_t addr, uint8_t val){
+     *     Write raw bits into specified registers
+     */
+    bool write_register(uint8_t reg_addr, uint8_t val)
+    {
         Wire.beginTransmission(_i2c_address);
-        Wire.write(addr);
+        Wire.write(reg_addr);
         Wire.write(val);
-        Wire.endTransmission();
+        return Wire.endTransmission() == 0;
     }
 
     /*
-    Read 8 bits (1 register) and return raw value as unsigned byte
-    */
-    uint8_t read8(uint8_t addr){
-        uint8_t val = 0x00;
+     *     Read N*8 Bits (N registers, from *lower_address, *(lower_address + 1)) and return raw value
+     */
+    size_t read_register(uint8_t reg_addr, size_t length, uint8_t *data)
+    {
         Wire.beginTransmission(_i2c_address);
-        Wire.write(addr);
+        Wire.write(reg_addr);
         Wire.endTransmission();
-        Wire.requestFrom(_i2c_address, (uint8_t) 1u);
-        val |= Wire.read();
+
+        size_t receivedBytes = Wire.requestFrom(_i2c_address, length);
+        if (receivedBytes)
+            Wire.readBytes(data, length);
+        return receivedBytes;
+    }
+
+    /*
+     *     Read 8 bits (1 register) and return raw value as unsigned byte
+     */
+    uint8_t read8(uint8_t reg_addr)
+    {
+        uint8_t val = 0x00;
+        this->read_register(reg_addr, 1, (uint8_t *)&val);
         return val;
     }
 
     /*
-    Read 16 Bits (2 registers, from *lower_address, *(lower_address + 1)) and return raw value
-    */ 
-    uint16_t read16(uint8_t lower_addr){
+     *     Read 16 Bits (2 registers, from *lower_address, *(lower_address + 1)) and return raw value
+     */
+    uint16_t read16(uint8_t reg_addr)
+    {
         uint16_t val;
-        Wire.beginTransmission(_i2c_address);
-        Wire.write(lower_addr);
-        Wire.endTransmission();
-        Wire.requestFrom(_i2c_address, (uint8_t) 2u);
-        val = (Wire.read() << 8) | Wire.read();
+        this->read_register(reg_addr, 2, (uint8_t *)&val);
         return val;
     }
 
 public:
-
     /*
-    Init function should be provided by all I2CDevice implementations
-    */
+     *     Init function should be provided by all I2CDevice implementations
+     */
     virtual void begin() = 0;
-
 };
 
 #endif
