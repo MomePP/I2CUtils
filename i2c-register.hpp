@@ -28,7 +28,7 @@ protected:
     }
 
     /*
-     *     Read N*8 Bits (N registers, from *lower_address, *(lower_address + 1)) and return raw value
+     *     Read N*8 Bits (N registers, from *lower_address, *(lower_address + 1)) and return received bytes count
      */
     size_t read_register(uint8_t reg_addr, size_t length, uint8_t *data)
     {
@@ -55,10 +55,12 @@ protected:
     /*
      *     Read 16 Bits (2 registers, from *lower_address, *(lower_address + 1)) and return raw value
      */
-    uint16_t read16(uint8_t reg_addr)
-    {
+    uint16_t read16(uint8_t reg_addr, bool littleEndian = true) {
         uint16_t val;
         this->read_register(reg_addr, 2, (uint8_t *)&val);
+
+        if (littleEndian) val = (val << 8) | (val >> 8);
+
         return val;
     }
 
