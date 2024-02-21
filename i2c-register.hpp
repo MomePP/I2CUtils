@@ -55,11 +55,13 @@ protected:
     /*
      *     Read 16 Bits (2 registers, from *lower_address, *(lower_address + 1)) and return raw value
      */
-    uint16_t read16(uint8_t reg_addr, bool littleEndian = true) {
+    uint16_t read16(uint8_t reg_addr, bool littleEndian = true)
+    {
         uint16_t val;
         this->read_register(reg_addr, 2, (uint8_t *)&val);
 
-        if (littleEndian) val = (val << 8) | (val >> 8);
+        if (littleEndian)
+            val = (val << 8) | (val >> 8);
 
         return val;
     }
@@ -68,7 +70,17 @@ public:
     /*
      *     Init function should be provided by all I2CDevice implementations
      */
-    virtual void begin() = 0;
+    virtual bool begin()
+    {
+        bool deviceExists = false;
+
+        Wire.begin();
+        Wire.beginTransmission(_i2c_address);
+        if (Wire.endTransmission() == 0)
+            deviceExists = true;
+
+        return deviceExists;
+    };
 };
 
 #endif
